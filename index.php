@@ -1,7 +1,7 @@
 <?php
 
-include 'vendor/mvc-core/autoloader.php';
-include 'autoloader.php';
+include realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR.'vendor/mvc-core/autoloader.php';
+include realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR.'autoloader.php';
 
 if(isset($_POST["action"])){
     switch ($_POST["action"]){
@@ -14,4 +14,3 @@ if(isset($_POST["action"])){
 $login->actionLogin();
 
 ?>
-<form action="?" METHOD="POST"><input type="submit" value="logout"/><input type="hidden" name="action" value="logout"></form>
