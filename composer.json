@@ -1,0 +1,20 @@
+{
+    "autoload": {
+        "psr-4": {
+            "Itsmethemojo\\": "src/"
+        }
+    },
+    "repositories": [
+        {
+            "url": "https://github.com/itsmethemojo/utils.git",
+            "type": "git"
+        }
+    ],
+    "require": {
+        "itsmethemojo/utils": "0.3",
+        "abraham/twitteroauth": "^0.6.3"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "2.*"
+    }
+}
