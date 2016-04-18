@@ -1,4 +1,5 @@
 {
+    "name": "itsmethemojo/loginWithTwitter",
     "autoload": {
         "psr-4": {
             "Itsmethemojo\\": "src/"
