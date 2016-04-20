@@ -15,11 +15,14 @@ class TwitterExtended
     /** @var int login cookie lifetime **/
     private $tokenLifetime = null;
 
+    /** @var Database **/
+    private $database;
+
     private $tokens = null;
 
-    public function __construct()
+    public function __construct($databaseConfigKey = "login-mysql", $storageConfigKey = "login-redis")
     {
-        $this->database = new Database('login-mysql');
+        $this->database = new Database($databaseConfigKey, $storageConfigKey);
         $config = ConfigReader::get('twitter', array('lifetime'));
         $this->tokenLifetime = intval($config['lifetime']);
     }
