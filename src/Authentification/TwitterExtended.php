@@ -34,8 +34,8 @@ class TwitterExtended
         }
         $twitter = new Twitter();
         $userData = $twitter->getLoginUser();
-        $token = $this->createToken($userData['id']);
-        $this->addTokenToDatabase($token, $userData['id']);
+        $token = $this->createToken($userData['name']);
+        $this->addTokenToDatabase($token, $userData['name']);
         $this->setToken($token);
         if ($this->isLoggedIn()) {
             return array("id" => $this->getUserId());
