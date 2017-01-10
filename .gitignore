@@ -1,4 +1,8 @@
 /nbproject/
-/vendor/
+/.idea/
+
 /config/
+/vagrant/
+/vendor/
+
 

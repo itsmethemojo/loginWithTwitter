@@ -19,6 +19,7 @@ class Twitter
 
     public function isLoggedIn()
     {
+        $this->init();
         return
             isset($_SESSION['twitter']['name'])
             && isset($_SESSION['twitter']['id']);

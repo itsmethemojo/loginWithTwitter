@@ -15,14 +15,14 @@ class TwitterExtended
     /** @var int login cookie lifetime **/
     private $tokenLifetime = null;
 
-    /** @var Database **/
+    /** @var \MongoDB\Driver\Manager database **/
     private $database;
 
+    /** @var array */
     private $tokens = null;
 
-    public function __construct($databaseConfigKey = "login-mysql", $storageConfigKey = "login-redis")
+    public function __construct()
     {
-        $this->database = new Database($databaseConfigKey, $storageConfigKey);
         $config = ConfigReader::get('twitter', array('lifetime'));
         $this->tokenLifetime = intval($config['lifetime']);
     }
@@ -34,8 +34,8 @@ class TwitterExtended
         }
         $twitter = new Twitter();
         $userData = $twitter->getLoginUser();
-        $token = $this->createToken($userData['name']);
-        $this->addTokenToDatabase($token, $userData['name']);
+        $token = $this->createToken($userData['id']);
+        $this->addTokenToDatabase($token, $userData['id']);
         $this->setToken($token);
         if ($this->isLoggedIn()) {
             return array("id" => $this->getUserId());
@@ -53,7 +53,7 @@ class TwitterExtended
         $tokens = $this->getTokens();
         return
             isset($tokens[$activeToken])
-            && $tokens[$activeToken]['expires'] > time();
+            && $tokens[$activeToken]->expires > time();
     }
 
     private function getTokens()
@@ -61,16 +61,17 @@ class TwitterExtended
         if ($this->tokens !== null) {
             return $this->tokens;
         }
-        $dbTokens = $this->database->read(
-            array('tokens'),
-            "SELECT * FROM tokens"
+
+        $documents = $this->getDatabase()->executeQuery(
+            'loginWithTwitter.tokens',
+            new \MongoDB\Driver\Query(array())
         );
-        $tokens   = array();
-        foreach ($dbTokens as $dbToken) {
-            $tokens[$dbToken["token"]] = $dbToken;
+
+        foreach ($documents as $document) {
+            $tokens[$document->token] = $document;
         }
         $this->tokens = $tokens;
-        return $tokens;
+        return $this->tokens;
     }
 
     private function createToken($userId)
@@ -80,16 +81,15 @@ class TwitterExtended
 
     private function addTokenToDatabase($token, $userId)
     {
-        $params = new QueryParameters();
-        $params
-            ->add($token)
-            ->add($userId)
-            ->add(time() + $this->tokenLifetime);
-        $dbTokens = $this->database->modify(
-            array('tokens'),
-            "INSERT INTO tokens (token,user_id,expires) VALUES (?,?,?)",
-            $params
+        $bulk = new \MongoDB\Driver\BulkWrite();
+        $bulk->insert(
+            array(
+                'userid' => $userId,
+                'token' => $token,
+                'expires' => time() + $this->tokenLifetime
+            )
         );
+        $this->getDatabase()->executeBulkWrite('loginWithTwitter.tokens', $bulk);
 
         $this->tokens = null;
     }
@@ -108,6 +108,17 @@ class TwitterExtended
 
     private function getUserId()
     {
-        return $this->getTokens()[$_COOKIE[self::TOKEN_KEY]]['user_id'];
+        return $this->getTokens()[$_COOKIE[self::TOKEN_KEY]]->userid;
+    }
+
+    private function getDatabase(){
+        if($this->database === null) {
+            $this->database = new \MongoDB\Driver\Manager("mongodb://localhost:27017");
+            if($this->database === null) {
+                throw new Exception("mongo db connection failed");
+            }
+        }
+
+        return $this->database;
     }
 }
