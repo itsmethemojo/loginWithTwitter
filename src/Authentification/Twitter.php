@@ -3,23 +3,45 @@
 namespace Itsmethemojo\Authentification;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
-use Itsmethemojo\File\ConfigReader;
+use Itsmethemojo\File\Config;
 use Exception;
 
 class Twitter
 {
     private $consumerKey    = null;
     private $consumerSecret = null;
+    private $whitelist = [];
+
+    public function __construct()
+    {
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        if ($this->consumerKey === null || $this->consumerSecret === null) {
+            $this->readConfig();
+        }
+        $this->handleTwitterCallback();
+    }
 
     public function getLoginUser()
     {
         $this->logIn();
-        return $_SESSION['twitter'];
+        //var_dump($this->whitelist);exit;
+        if ($this->isOnWhitelist()) {
+            return $_SESSION['twitter'];
+        }
+        return [];
     }
 
     public function isLoggedIn()
     {
-        $this->init();
+        return
+            $this->isLoggedInOnTwitter()
+            && $this->isOnWhitelist();
+    }
+
+    private function isLoggedInOnTwitter()
+    {
         return
             isset($_SESSION['twitter']['name'])
             && isset($_SESSION['twitter']['id']);
@@ -27,8 +49,7 @@ class Twitter
 
     private function logIn()
     {
-        $this->init();
-        if ($this->isLoggedIn()) {
+        if ($this->isLoggedInOnTwitter()) {
             return;
         }
         $connection               = new TwitterOAuth(
@@ -55,15 +76,12 @@ class Twitter
         exit;
     }
 
-    private function init()
+    private function isOnWhitelist()
     {
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        if ($this->consumerKey === null || $this->consumerSecret === null) {
-            $this->readConfig();
-        }
-        $this->handleTwitterCallback();
+        return
+            isset($_SESSION['twitter']['id'])
+            && is_array($this->whitelist)
+            && in_array($_SESSION['twitter']['id'], $this->whitelist);
     }
 
     private function handleTwitterCallback()
@@ -110,11 +128,12 @@ class Twitter
 
     private function readConfig()
     {
-        $config               = ConfigReader::get(
+        $config               = Config::get(
             'twitter',
-            array('consumerKey', 'consumerSecret')
+            array('consumerKey', 'consumerSecret', 'whitelist')
         );
         $this->consumerKey    = $config['consumerKey'];
         $this->consumerSecret = $config['consumerSecret'];
+        $this->whitelist = $config['whitelist'];
     }
 }

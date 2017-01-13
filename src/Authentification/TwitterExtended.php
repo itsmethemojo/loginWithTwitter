@@ -3,9 +3,7 @@
 namespace Itsmethemojo\Authentification;
 
 use Itsmethemojo\Authentification\Twitter;
-use Itsmethemojo\Storage\Database;
-use Itsmethemojo\Storage\QueryParameters;
-use Itsmethemojo\File\ConfigReader;
+use Itsmethemojo\File\Config;
 use Exception;
 
 class TwitterExtended
@@ -17,13 +15,12 @@ class TwitterExtended
 
     /** @var \MongoDB\Driver\Manager database **/
     private $database;
-
-    /** @var array */
+    
     private $tokens = null;
 
     public function __construct()
     {
-        $config = ConfigReader::get('twitter', array('lifetime'));
+        $config = Config::get('twitter', array('lifetime'));
         $this->tokenLifetime = intval($config['lifetime']);
     }
 
@@ -34,13 +31,20 @@ class TwitterExtended
         }
         $twitter = new Twitter();
         $userData = $twitter->getLoginUser();
+
+        // if user is not whitelisted this array is empty
+        if (!key_exists('id', $userData)) {
+            throw new Exception("this twitter account is not allowed on this api");
+        }
+
         $token = $this->createToken($userData['id']);
         $this->addTokenToDatabase($token, $userData['id']);
         $this->setToken($token);
+
         if ($this->isLoggedIn()) {
             return array("id" => $this->getUserId());
         } else {
-            throw new Exception("login did not work?");
+            throw new Exception("this did not work. that's odd. :(");
         }
     }
 
@@ -111,10 +115,11 @@ class TwitterExtended
         return $this->getTokens()[$_COOKIE[self::TOKEN_KEY]]->userid;
     }
 
-    private function getDatabase(){
-        if($this->database === null) {
+    private function getDatabase()
+    {
+        if ($this->database === null) {
             $this->database = new \MongoDB\Driver\Manager("mongodb://localhost:27017");
-            if($this->database === null) {
+            if ($this->database === null) {
                 throw new Exception("mongo db connection failed");
             }
         }

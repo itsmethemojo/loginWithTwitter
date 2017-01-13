@@ -12,7 +12,7 @@
         }
     ],
     "require": {
-        "itsmethemojo/utils": "0.3",
+        "itsmethemojo/utils": "dev-develop",
         "abraham/twitteroauth": "^0.6.3",
         "slim/slim": "^3.0",
         "guzzlehttp/guzzle": "^6.2"
