@@ -318,7 +318,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/itsmethemojo/utils.git",
-                "reference": "b1eb312956dd492bb701a9ee69f5a830e5ac80e1"
+                "reference": "61190295e2ab5819e88124afed6a74ef53793114"
             },
             "require": {
                 "phpunit/phpunit": "4.8.26"
@@ -332,7 +332,7 @@
                     "Itsmethemojo\\": "src/"
                 }
             },
-            "time": "2017-01-12 20:41:44"
+            "time": "2017-01-14 21:44:31"
         },
         {
             "name": "nikic/fast-route",
