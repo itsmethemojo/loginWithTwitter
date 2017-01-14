@@ -5,20 +5,14 @@ header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
 
-error_reporting(E_ALL | E_STRICT);
-ini_set('display_errors', 1);
-
-function throwAllErrorsAsExceptionsErrorHandler($errno, $errstr, $errfile, $errline)
-{
-    throw new Exception($errstr);
-}
-set_error_handler("throwAllErrorsAsExceptionsErrorHandler");
-
+//TODO use slim integrated caching
 
 require __DIR__ . '/../vendor/autoload.php';
 
 use Itsmethemojo\Authentification\TwitterExtended;
 use Itsmethemojo\Authentification\Redirect;
+
+(new \Itsmethemojo\Error\Handler())->throwAllErrorsAsExceptions();
 
 $app = new \Slim\App();
 
