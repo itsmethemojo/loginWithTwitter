@@ -2,9 +2,11 @@
 
 namespace Itsmethemojo\Authentification;
 
-use Itsmethemojo\Authentification\Twitter;
 use Itsmethemojo\File\Config;
 use Exception;
+use MongoDB\Driver\BulkWrite;
+use MongoDB\Driver\Manager;
+use MongoDB\Driver\Query;
 
 class TwitterExtended
 {
@@ -68,9 +70,10 @@ class TwitterExtended
 
         $documents = $this->getDatabase()->executeQuery(
             'loginWithTwitter.tokens',
-            new \MongoDB\Driver\Query(array())
+            new Query(array())
         );
 
+        $tokens = [];
         foreach ($documents as $document) {
             $tokens[$document->token] = $document;
         }
@@ -85,7 +88,7 @@ class TwitterExtended
 
     private function addTokenToDatabase($token, $userId)
     {
-        $bulk = new \MongoDB\Driver\BulkWrite();
+        $bulk = new BulkWrite();
         $bulk->insert(
             array(
                 'userid' => $userId,
@@ -118,7 +121,8 @@ class TwitterExtended
     private function getDatabase()
     {
         if ($this->database === null) {
-            $this->database = new \MongoDB\Driver\Manager("mongodb://localhost:27017");
+            //TODO read mongo path from ini file
+            $this->database = new Manager("mongodb://localhost:27017");
             if ($this->database === null) {
                 throw new Exception("mongo db connection failed");
             }
