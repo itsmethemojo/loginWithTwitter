@@ -121,8 +121,9 @@ class TwitterExtended
     private function getDatabase()
     {
         if ($this->database === null) {
+            $config = Config::get('twitter', array('dbHost','dbPort'));
             //TODO read mongo path from ini file
-            $this->database = new Manager("mongodb://localhost:27017");
+            $this->database = new Manager("mongodb://" . $config['dbHost'] . ":" . $config['dbPort']);
             if ($this->database === null) {
                 throw new Exception("mongo db connection failed");
             }
