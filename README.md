@@ -1,67 +1,46 @@
 # loginWithTwitter
-This application provides authentification via twitter for your application. The idea is to keep account management away from you.
+
+This REST API provides authentification via twitter for your application. The idea is to keep account management away from you.
 Twitter will verifiy your users and you can focus on the interesting things.
 
-## howto use it
+## howto to run it in 4 steps
 
-### login only for the session
+### 1. checkout
+```
+git clone https://github.com/itsmethemojo/loginWithTwitter.git
+```
+### 2. start Vagrant Box
 
-```php
-require __DIR__ .'/../vendor/autoload.php';
+```
+vagrant up
+```
+### 3. install Dependencies
 
-$twitter = new Itsmethemojo\Authentification\Twitter();
-var_dump($twitter->getLoginUser());
+```
+vagrant ssh
+cd /vagrant
+composer install
 ```
 
-### authorize cookie token for login
+### 4. create configuration file
 
-```php
-require __DIR__ .'/../vendor/autoload.php';
-
-$twitter = new Itsmethemojo\Authentification\TwitterExtended();
-var_dump($twitter->getLoginUser());
+create an ini configuration file **config/twitter.ini**
 ```
-
-## coming features
-
-* black and whitelists for twitter handles
-
-## installation
-
-### config files
-
-the different software stacks are configured with ini files placed in the **/config** folder
-
-#### login-mysql.ini
-```
-host = localhost
-username = root
-password = root
-databaseName = login
-```
-
-#### redis.ini
-```
-host = localhost
-```
-
-#### twitter.ini
-```
-consumerKey = ENTER_KEY_HERE
-consumerSecret = ENTER_SECRET_HERE
+consumerKey = [YOUR_TWITTER_CONSUMER_KEY]
+consumerSecret = [YOUR_TWITTER_CONSUMER_SECRET]
 lifetime = 2592000
+whitelist[] = [FIRST_TWITTER_ACOUNT_ID]
+;whitelist[] = [SECOND_TWITTER_ACOUNT_ID]
+dbHost = localhost
+dbPort = 27017
 ```
 
-### mysql table
+## howto get it working on your server
 
-for the token method a mysql table is needed
+1. check the **vagrant/default.conf** to see, howto configure a nginx/php-fpm for this
+2. check the linked scripts in **vagrant/provision.sh** for the needed software stack
 
-```sql
-CREATE TABLE `tokens` (
-  `token` varchar(100) CHARACTER SET utf8 NOT NULL,
-  `user_id` varchar(100) CHARACTER SET utf8 NOT NULL,
-  `expires` bigint(20) NOT NULL,
-  PRIMARY KEY (`token`)
-) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8; 
-```
+## howto embed it in other applications
+
+TODO 
 
