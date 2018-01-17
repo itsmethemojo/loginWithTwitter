@@ -36,7 +36,7 @@ $app->get(
             if ($this->get('settings')['displayErrorDetails']) {
                 throw $ex;
             }
-
+            //TODO remove exception catching when parameter missing response code works
             return $response->withStatus(500)->withJson(
                 array(
                     'error' => $ex->getMessage()
@@ -59,6 +59,7 @@ $app->get(
                 throw $ex;
             }
             //TODO distinguish parameter missing with 400
+            //TODO remove exception catching when parameter missing response code works
             return $response->withStatus(500)->withJson(
                 array(
                     'error' => $ex->getMessage()

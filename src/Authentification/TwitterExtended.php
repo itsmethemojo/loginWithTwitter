@@ -60,7 +60,7 @@ class TwitterExtended
 
     private function getTokens()
     {
-
+        //TODO use redis
         if (!file_exists('/var/www/data')) {
             mkdir('data', 0777, true);
         }
