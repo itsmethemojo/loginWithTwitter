@@ -14,3 +14,11 @@ you can easily do composer actions with the composer container like this
 sudo docker run --rm --interactive --tty --volume $PWD:/app composer update slim/slim
 sudo docker run --rm --interactive --tty --volume $PWD:/app composer require whatever
 ```
+
+
+## clean up container
+to stop and remove the server container again run
+```
+sudo docker stop login-api ;\
+sudo docker rm login-api
+```
