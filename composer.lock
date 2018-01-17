@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "1cad0e4e53d4a3689dceeea8e91eabfa",
+    "content-hash": "62b98426e99449ae63d9b5048e74c935",
     "packages": [
         {
             "name": "abraham/twitteroauth",
@@ -147,7 +147,7 @@
         },
         {
             "name": "itsmethemojo/utils",
-            "version": "dev-develop",
+            "version": "0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/itsmethemojo/utils.git",
@@ -1584,9 +1584,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "itsmethemojo/utils": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
