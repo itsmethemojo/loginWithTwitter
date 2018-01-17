@@ -73,19 +73,7 @@ $app->get(
     function ($request, $response, $args) {
         return $response->write(
             "<pre>\n" .
-            "LoginWithTwitter API\n\n" .
-            "  avialable methods:\n\n" .
-            "    [1] /status\n" .
-            "    [2] /login\n\n" .
-            "  documentation\n\n" .
-            "    /status\n\n" .
-            "      method: GET\n" .
-            "      parameters: -\n\n" .
-            "    /login\n\n" .
-            "      method: GET\n" .
-            "      parameters:\n" .
-            "        \"redirect\" (optional) target url to redirect after the login\n" .
-            "                   if not given HTTP_REFERER will be used to redirect\n" .
+            "for route documentation open https://github.com/itsmethemojo/loginWithTwitter/blob/master/documentation/routes.md" .
             "</pre>"
         );
     }
