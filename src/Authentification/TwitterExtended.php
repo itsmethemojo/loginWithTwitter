@@ -12,13 +12,10 @@ class TwitterExtended
 {
     const TOKEN_KEY = "twitter_token";
 
-    /** @var int login cookie lifetime **/
+    /**
+ * @var int login cookie lifetime
+**/
     private $tokenLifetime = null;
-
-    /** @var \MongoDB\Driver\Manager database **/
-    private $database;
-    
-    private $tokens = null;
 
     public function __construct()
     {
@@ -26,10 +23,10 @@ class TwitterExtended
         $this->tokenLifetime = intval($config['lifetime']);
     }
 
-    public function getLoginUser()
+    public function doLogin()
     {
         if ($this->isLoggedIn()) {
-            return array("id" => $this->getUserId());
+            return true;
         }
         $twitter = new Twitter();
         $userData = $twitter->getLoginUser();
@@ -40,11 +37,10 @@ class TwitterExtended
         }
 
         $token = $this->createToken($userData['id']);
-        $this->addTokenToDatabase($token, $userData['id']);
-        $this->setToken($token);
+        $this->addToken($token, $userData['id']);
 
         if ($this->isLoggedIn()) {
-            return array("id" => $this->getUserId());
+            return true;
         } else {
             throw new Exception("this did not work. that's odd. :(");
         }
@@ -59,26 +55,23 @@ class TwitterExtended
         $tokens = $this->getTokens();
         return
             isset($tokens[$activeToken])
-            && $tokens[$activeToken]->expires > time();
+            && $tokens[$activeToken]['expires'] > time();
     }
 
     private function getTokens()
     {
-        if ($this->tokens !== null) {
-            return $this->tokens;
+
+        if (!file_exists('/var/www/data')) {
+            mkdir('data', 0777, true);
         }
 
-        $documents = $this->getDatabase()->executeQuery(
-            'loginWithTwitter.tokens',
-            new Query(array())
-        );
-
-        $tokens = [];
-        foreach ($documents as $document) {
-            $tokens[$document->token] = $document;
+        if (!file_exists('/var/www/data/tokens.json')) {
+            return [];
         }
-        $this->tokens = $tokens;
-        return $this->tokens;
+
+
+
+        return json_decode(file_get_contents('/var/www/data/tokens.json'), true);
     }
 
     private function createToken($userId)
@@ -86,29 +79,26 @@ class TwitterExtended
         return md5(time() . $userId . rand(1000, 9999));
     }
 
-    private function addTokenToDatabase($token, $userId)
+    private function addToken($token, $userId)
     {
-        $bulk = new BulkWrite();
-        $bulk->insert(
-            array(
-                'userid' => $userId,
-                'token' => $token,
-                'expires' => time() + $this->tokenLifetime
-            )
+        //TODO use redis to let the token expire by their own
+        $tokens = $this->getTokens();
+        $tokens[$token] = array(
+            'userid' => $userId,
+            'token' => $token,
+            'expires' => time() + $this->tokenLifetime
         );
-        $this->getDatabase()->executeBulkWrite('loginWithTwitter.tokens', $bulk);
-
-        $this->tokens = null;
+        file_put_contents('/var/www/data/tokens.json', json_encode($tokens));
+        $this->setTokenCookie($token);
     }
 
-    private function setToken($token)
+    private function setTokenCookie($token)
     {
         setcookie(
             self::TOKEN_KEY,
             $token,
             time() + $this->tokenLifetime + 500,
-            "/",
-            $_SERVER['HTTP_HOST']
+            "/"
         );
         $_COOKIE[self::TOKEN_KEY] = $token;
     }
@@ -116,19 +106,5 @@ class TwitterExtended
     private function getUserId()
     {
         return $this->getTokens()[$_COOKIE[self::TOKEN_KEY]]->userid;
-    }
-
-    private function getDatabase()
-    {
-        if ($this->database === null) {
-            $config = Config::get('twitter', array('dbHost','dbPort'));
-            //TODO read mongo path from ini file
-            $this->database = new Manager("mongodb://" . $config['dbHost'] . ":" . $config['dbPort']);
-            if ($this->database === null) {
-                throw new Exception("mongo db connection failed");
-            }
-        }
-
-        return $this->database;
     }
 }

@@ -3,44 +3,46 @@
 This REST API provides authentification via twitter for your application. The idea is to keep account management away from you.
 Twitter will verifiy your users and you can focus on the interesting things.
 
-## howto to run it in 4 steps
+## howto to run it in 3 steps
 
-### 1. checkout
+### 1. get code
 ```
 git clone https://github.com/itsmethemojo/loginWithTwitter.git
 ```
-### 2. start Vagrant Box
+### 2. composer install
 
 ```
-vagrant up
-```
-### 3. install Dependencies
-
-```
-vagrant ssh
-cd /vagrant
-composer install
+sudo docker run --rm --interactive --tty --volume $PWD:/app composer install
 ```
 
-### 4. create configuration file
+### 3. start local server
 
-create an ini configuration file **config/twitter.ini**
 ```
-consumerKey = [YOUR_TWITTER_CONSUMER_KEY]
-consumerSecret = [YOUR_TWITTER_CONSUMER_SECRET]
-lifetime = 2592000
-whitelist[] = [FIRST_TWITTER_ACOUNT_ID]
-;whitelist[] = [SECOND_TWITTER_ACOUNT_ID]
-dbHost = localhost
-dbPort = 27017
+sudo docker run -td -p 80:8080 --name login-api -v $(pwd):/var/www php ;\
+echo -e "\n\n   open this url: http://"$(sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' login-api)":8080/status\n\n" ;\
+sudo docker exec -t login-api php -S 0.0.0.0:8080 -t /var/www/public index.php
+
 ```
 
-## howto get it working on your server
+## configure the application
 
-1. check the **vagrant/default.conf** to see, howto configure a nginx/php-fpm for this
-2. check the linked scripts in **vagrant/provision.sh** for the needed software stack
+1. create config file
+```
+cp config/twitter.example.ini config/twitter.ini
+```
+2. go to https://apps.twitter.com/ and hit **Create New App** and add the two keys to the new config file
+3. also add a list of allowed twitter accounts by id
 
-## howto embed it in other applications
+**TODO** add by name and or empty list for everyone
 
-TODO 
+## available API routes
 
+[documentation](documentation/routes.md)
+
+## howto use the development tools with the container
+
+[documentation](documentation/tools.md)
+
+## howto configure your webserver for it
+
+[documentation](https://www.slimframework.com/docs/start/web-servers.html)

@@ -11,10 +11,17 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Itsmethemojo\Authentification\TwitterExtended;
 use Itsmethemojo\Authentification\Redirect;
+use Itsmethemojo\File\Config;
 
-(new \Itsmethemojo\Error\Handler())->throwAllErrorsAsExceptions();
+//(new \Itsmethemojo\Error\Handler())->throwAllErrorsAsExceptions();
 
-$app = new \Slim\App();
+$config = [
+    'settings' => [
+        'displayErrorDetails' => Config::get('twitter', array('debug'))['debug'] ? 'true' : 'false'
+    ],
+];
+
+$app = new \Slim\App($config);
 
 $app->get(
     '/status',
@@ -26,6 +33,10 @@ $app->get(
             }
             return $response->withJson(array("message" => "authorized"));
         } catch (Exception $ex) {
+            if ($this->get('settings')['displayErrorDetails']) {
+                throw $ex;
+            }
+
             return $response->withStatus(500)->withJson(
                 array(
                     'error' => $ex->getMessage()
@@ -41,9 +52,13 @@ $app->get(
         try {
             $redirectTarget = Redirect::getUrl($request->getParams(), $request->getServerParams());
             $twitter = new TwitterExtended();
-            $twitter->getLoginUser();
+            $twitter->doLogin();
             return $response->withRedirect($redirectTarget);
         } catch (Exception $ex) {
+            if ($this->get('settings')['displayErrorDetails']) {
+                throw $ex;
+            }
+            //TODO distinguish parameter missing with 400
             return $response->withStatus(500)->withJson(
                 array(
                     'error' => $ex->getMessage()

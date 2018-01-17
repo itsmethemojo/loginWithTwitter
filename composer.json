@@ -14,8 +14,7 @@
     "require": {
         "itsmethemojo/utils": "dev-develop",
         "abraham/twitteroauth": "^0.6.3",
-        "slim/slim": "^3.0",
-        "guzzlehttp/guzzle": "^6.2"
+        "slim/slim": "^3.0"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "2.*"
