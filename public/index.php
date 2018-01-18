@@ -1,19 +1,11 @@
 <?php
 
-header("Cache-Control: public, max-age=0, no-cache");
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Cache-Control: post-check=0, pre-check=0', false);
-header('Pragma: no-cache');
-
-//TODO use slim integrated caching
-
 require __DIR__ . '/../vendor/autoload.php';
 
 use Itsmethemojo\Authentification\TwitterExtended;
 use Itsmethemojo\Authentification\Redirect;
+use Itsmethemojo\Authentification\ParameterException;
 use Itsmethemojo\File\Config;
-
-//(new \Itsmethemojo\Error\Handler())->throwAllErrorsAsExceptions();
 
 $config = [
     'settings' => [
@@ -23,26 +15,29 @@ $config = [
 
 $app = new \Slim\App($config);
 
+//setup caching
+$app->add(new \Slim\HttpCache\Cache());
+$container = $app->getContainer();
+$container['cache'] = function () {
+    return new \Slim\HttpCache\CacheProvider();
+};
+
+
 $app->get(
     '/status',
     function ($request, $response, $args) {
-        try {
-            $twitter = new TwitterExtended();
-            if (!$twitter->isLoggedIn()) {
-                return $response->withStatus(401)->withJson(array("message" => "not authorized"));
-            }
-            return $response->withJson(array("message" => "authorized"));
-        } catch (Exception $ex) {
-            if ($this->get('settings')['displayErrorDetails']) {
-                throw $ex;
-            }
-            //TODO remove exception catching when parameter missing response code works
-            return $response->withStatus(500)->withJson(
-                array(
-                    'error' => $ex->getMessage()
-                )
-            );
+        $twitter = new TwitterExtended();
+        if (!$twitter->isLoggedIn()) {
+            $output = $response->withStatus(401)->withJson(array("status" => "not authorized"));
+            return $this->cache->allowCache($output, 'public', 0);
         }
+        $output = $response->withJson(
+            array_merge(
+                array("status" => "authorized"),
+                $twitter->getTokenUserData()
+            )
+        );
+        return $this->cache->allowCache($output, 'public', 0);
     }
 );
 
@@ -54,17 +49,13 @@ $app->get(
             $twitter = new TwitterExtended();
             $twitter->doLogin();
             return $response->withRedirect($redirectTarget);
-        } catch (Exception $ex) {
-            if ($this->get('settings')['displayErrorDetails']) {
-                throw $ex;
-            }
-            //TODO distinguish parameter missing with 400
-            //TODO remove exception catching when parameter missing response code works
-            return $response->withStatus(500)->withJson(
+        } catch (ParameterException $ex) {
+            $output = $response->withStatus(400)->withJson(
                 array(
                     'error' => $ex->getMessage()
                 )
             );
+            return $this->cache->allowCache($output, 'public', 0);
         }
     }
 );
@@ -72,11 +63,13 @@ $app->get(
 $app->get(
     '/',
     function ($request, $response, $args) {
-        return $response->write(
-            "<pre>\n" .
-            "for route documentation open https://github.com/itsmethemojo/loginWithTwitter/blob/master/documentation/routes.md" .
-            "</pre>"
+        $output = $response->write(
+            "<pre>\n"
+            . "for route documentation open "
+            . "https://github.com/itsmethemojo/loginWithTwitter/blob/master/documentation/routes.md"
+            . "</pre>"
         );
+        return $this->cache->allowCache($output, 'public', 2592000);
     }
 );
 

@@ -2,7 +2,7 @@
 
 when the container is running open another bash so you can run the tasks in the container
 ```
-sudo docker exec -it login-api
+sudo docker exec -it login-api /bin/bash
 cd /var/www/
 vendor/bin/phpcs --standard=PSR2 src public
 vendor/bin/phpcbf --standard=PSR2 src public

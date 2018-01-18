@@ -3,18 +3,14 @@
 namespace Itsmethemojo\Authentification;
 
 use Itsmethemojo\File\Config;
-use Exception;
-use MongoDB\Driver\BulkWrite;
-use MongoDB\Driver\Manager;
-use MongoDB\Driver\Query;
 
 class TwitterExtended
 {
     const TOKEN_KEY = "twitter_token";
 
     /**
- * @var int login cookie lifetime
-**/
+     * @var int login cookie lifetime
+    **/
     private $tokenLifetime = null;
 
     public function __construct()
@@ -33,44 +29,64 @@ class TwitterExtended
 
         // if user is not whitelisted this array is empty
         if (!key_exists('id', $userData)) {
-            throw new Exception("this twitter account is not allowed on this api");
+            throw new AuthentificationException("this twitter account is not allowed on this api");
         }
-
-        $token = $this->createToken($userData['id']);
-        $this->addToken($token, $userData['id']);
+        $this->addToken($userData['id'], $userData['name']);
 
         if ($this->isLoggedIn()) {
             return true;
         } else {
-            throw new Exception("this did not work. that's odd. :(");
+            throw new AuthentificationException("this did not work. that's odd. :(");
         }
     }
 
     public function isLoggedIn()
     {
-        if (!isset($_COOKIE[self::TOKEN_KEY])) {
+        if (!$this->hasCookieToken()) {
             return false;
         }
-        $activeToken = $_COOKIE[self::TOKEN_KEY];
-        $tokens = $this->getTokens();
+        $tokenData = $this->getTokenData();
+
         return
-            isset($tokens[$activeToken])
-            && $tokens[$activeToken]['expires'] > time();
+            isset($tokenData) &&
+            $tokenData['expires'] > time();
     }
 
-    private function getTokens()
+    public function getTokenUserData()
     {
+        if (!$this->isLoggedIn()) {
+            return [];
+        }
+        $tokenData = $this->getTokenData();
+        return [
+            "id" => $tokenData['id'],
+            "handle" => $tokenData['handle']
+        ];
+    }
+
+    private function hasCookieToken()
+    {
+        return isset($_COOKIE[self::TOKEN_KEY]);
+    }
+
+    private function getTokenData()
+    {
+        if (!$this->hasCookieToken()) {
+            return [];
+        }
+        return $this->getTokenDataList()[$_COOKIE[self::TOKEN_KEY]];
+    }
+
+    private function getTokenDataList()
+    {
+        //TODO save tokens ones read
         //TODO use redis
         if (!file_exists('/var/www/data')) {
             mkdir('data', 0777, true);
         }
-
         if (!file_exists('/var/www/data/tokens.json')) {
             return [];
         }
-
-
-
         return json_decode(file_get_contents('/var/www/data/tokens.json'), true);
     }
 
@@ -79,16 +95,18 @@ class TwitterExtended
         return md5(time() . $userId . rand(1000, 9999));
     }
 
-    private function addToken($token, $userId)
+    private function addToken($id, $handle)
     {
         //TODO use redis to let the token expire by their own
-        $tokens = $this->getTokens();
-        $tokens[$token] = array(
-            'userid' => $userId,
+        $tokenDataList = $this->getTokenDataList();
+        $token = $this->createToken($userData['id']);
+        $tokenDataList[$token] = array(
+            'id' => $id,
+            'handle' => $handle,
             'token' => $token,
             'expires' => time() + $this->tokenLifetime
         );
-        file_put_contents('/var/www/data/tokens.json', json_encode($tokens));
+        file_put_contents('/var/www/data/tokens.json', json_encode($tokenDataList));
         $this->setTokenCookie($token);
     }
 
@@ -101,10 +119,5 @@ class TwitterExtended
             "/"
         );
         $_COOKIE[self::TOKEN_KEY] = $token;
-    }
-
-    private function getUserId()
-    {
-        return $this->getTokens()[$_COOKIE[self::TOKEN_KEY]]->userid;
     }
 }

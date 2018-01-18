@@ -4,7 +4,6 @@ namespace Itsmethemojo\Authentification;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
 use Itsmethemojo\File\Config;
-use Exception;
 
 class Twitter
 {
@@ -93,7 +92,7 @@ class Twitter
         $requestToken = $_SESSION['twitter_oauth'];
 
         if ($requestToken['oauth_token'] !== $_REQUEST['oauth_token']) {
-            throw new Exception("login did not work");
+            throw new AuthentificationException("login did not work");
         }
 
 
@@ -113,7 +112,7 @@ class Twitter
         if (!isset($accessToken['user_id'])
             || !isset($accessToken['screen_name'])
         ) {
-            throw new Exception("login did not work");
+            throw new AuthentificationException("login did not work");
         }
 
 
