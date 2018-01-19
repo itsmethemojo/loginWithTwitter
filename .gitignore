@@ -1,3 +1,2 @@
-/config/login.ini
+/config/*.ini
 /vendor/
-/data/

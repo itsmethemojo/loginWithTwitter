@@ -3,7 +3,7 @@
 ## create the config file
 you can copy the template
 ```
-cp config/login.example.ini config/login.ini
+cp config/login.ini.example config/login.ini
 ```
 
 ## get Twitter Application Keys

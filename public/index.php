@@ -7,9 +7,19 @@ use Itsmethemojo\Authentification\Redirect;
 use Itsmethemojo\Authentification\ParameterException;
 use Itsmethemojo\File\Config;
 
+$iniFilename = 'login';
+
+try{
+  $debug = boolval(Config::get($iniFilename, array('DEBUG_MODE'))['DEBUG_MODE']);
+}
+catch(Exception $e){
+  $debug = false;
+}
+
 $config = [
     'settings' => [
-        'displayErrorDetails' => Config::get('login', array('debug'))['debug'] ? 'true' : 'false'
+        'displayErrorDetails' => $debug,
+        'iniFileName' => $iniFilename
     ],
 ];
 
@@ -26,7 +36,7 @@ $container['cache'] = function () {
 $app->get(
     '/status',
     function ($request, $response, $args) {
-        $twitter = new TwitterExtended();
+        $twitter = new TwitterExtended($this->get('settings')['iniFileName']);
         if (!$twitter->isLoggedIn()) {
             $output = $response->withStatus(401)->withJson(array("status" => "not authorized"));
             return $this->cache->allowCache($output, 'public', 0);
@@ -46,7 +56,7 @@ $app->get(
     function ($request, $response, $args) {
         try {
             $redirectTarget = Redirect::getUrl($request->getParams(), $request->getServerParams());
-            $twitter = new TwitterExtended();
+            $twitter = new TwitterExtended($this->get('settings')['iniFileName']);
             $twitter->doLogin();
             return $response->withRedirect($redirectTarget);
         } catch (ParameterException $ex) {

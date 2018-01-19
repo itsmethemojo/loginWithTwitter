@@ -133,10 +133,10 @@ class Twitter
     {
         $config = Config::get(
             $this->iniFile,
-            array('consumerKey', 'consumerSecret', 'whitelist')
+            array('CONSUMER_KEY', 'CONSUMER_SECRET', 'WHITELIST')
         );
-        $this->consumerKey = $config['consumerKey'];
-        $this->consumerSecret = $config['consumerSecret'];
-        $this->whitelist = $config['whitelist'];
+        $this->consumerKey = $config['CONSUMER_KEY'];
+        $this->consumerSecret = $config['CONSUMER_SECRET'];
+        $this->whitelist = $config['WHITELIST'];
     }
 }
