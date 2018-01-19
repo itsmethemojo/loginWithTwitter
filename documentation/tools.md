@@ -1,11 +1,20 @@
 [back to README](../README.md)
 
-## use PHP Codesniffer
+## use PHP Codesniffer as pre-commit
 
-when the container is running open another bash so you can run the tasks in the container
+install a pre-commit hook that runs a PHP codesniffer
 ```
-docker exec -t login-api bash -c 'cd ..; vendor/bin/phpcbf --standard=PSR2 src public; vendor/bin/phpcs --standard=PSR2 src public'
+hooks/install-hooks.sh
 ```
+
+you can run the codesniffer by yourself by using this command
+
+it will connect into the running login-api container and starts **phpcbf** and **phpcs**
+```
+hooks/codesniffer.sh
+
+```
+
 
 ## use phpunit
 
