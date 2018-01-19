@@ -15,12 +15,14 @@ git clone https://github.com/itsmethemojo/loginWithTwitter.git
 sudo docker run --rm --interactive --tty --volume $PWD:/app composer install
 ```
 
-### 3. start local server
+### 3. start local server including redis
 
 ```
-sudo docker run -td -p 80:8080 --name login-api -v $(pwd):/var/www php ;\
+sudo docker run --name local-redis -d redis ;\
+sudo docker build -t local-php . ;\
+sudo docker run -td -p 80:8080 --name login-api -v $(pwd):/var/www local-php ;\
 echo -e "\n\n   open this url: http://"$(sudo docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' login-api)":8080/status\n\n" ;\
-sudo docker exec -t login-api php -S 0.0.0.0:8080 -t /var/www/public index.php
+sudo docker exec -t login-api php -S 0.0.0.0:8080 index.php
 
 ```
 
@@ -28,7 +30,7 @@ sudo docker exec -t login-api php -S 0.0.0.0:8080 -t /var/www/public index.php
 
 1. create config file
 ```
-cp config/twitter.example.ini config/twitter.ini
+cp config/login.example.ini config/login.ini
 ```
 2. go to https://apps.twitter.com/ and hit **Create New App** and add the two keys to the new config file
 3. also add a list of allowed twitter accounts by id

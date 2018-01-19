@@ -11,14 +11,18 @@ class Twitter
     private $consumerSecret = null;
     private $whitelist = [];
 
-    public function __construct()
+    /**
+     * @var String name of ini file in config folder
+    **/
+    private $iniFile = null;
+
+    public function __construct($iniFile = 'login')
     {
+        $this->iniFile = $iniFile;
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
-        if ($this->consumerKey === null || $this->consumerSecret === null) {
-            $this->readConfig();
-        }
+        $this->readConfig();
         $this->handleTwitterCallback();
     }
 
@@ -127,11 +131,11 @@ class Twitter
 
     private function readConfig()
     {
-        $config               = Config::get(
-            'twitter',
+        $config = Config::get(
+            $this->iniFile,
             array('consumerKey', 'consumerSecret', 'whitelist')
         );
-        $this->consumerKey    = $config['consumerKey'];
+        $this->consumerKey = $config['consumerKey'];
         $this->consumerSecret = $config['consumerSecret'];
         $this->whitelist = $config['whitelist'];
     }

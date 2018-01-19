@@ -9,7 +9,7 @@ use Itsmethemojo\File\Config;
 
 $config = [
     'settings' => [
-        'displayErrorDetails' => Config::get('twitter', array('debug'))['debug'] ? 'true' : 'false'
+        'displayErrorDetails' => Config::get('login', array('debug'))['debug'] ? 'true' : 'false'
     ],
 ];
 

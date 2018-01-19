@@ -3,6 +3,7 @@
 namespace Itsmethemojo\Authentification;
 
 use Itsmethemojo\File\Config;
+use Redis;
 
 class TwitterExtended
 {
@@ -11,11 +12,27 @@ class TwitterExtended
     /**
      * @var int login cookie lifetime
     **/
-    private $tokenLifetime = null;
+    private $tokenLifetime = 0;
 
-    public function __construct()
+    /**
+     * @var Redis redis connection
+    **/
+    private $redis = null;
+
+    /**
+     * @var String prefix for redis keys
+    **/
+    private $prefix = null;
+
+    /**
+     * @var String name of ini file in config folder
+    **/
+    private $iniFile = null;
+
+    public function __construct($iniFile = 'login')
     {
-        $config = Config::get('twitter', array('lifetime'));
+        $this->iniFile = $iniFile;
+        $config = Config::get($this->iniFile, array('lifetime'));
         $this->tokenLifetime = intval($config['lifetime']);
     }
 
@@ -42,14 +59,8 @@ class TwitterExtended
 
     public function isLoggedIn()
     {
-        if (!$this->hasCookieToken()) {
-            return false;
-        }
-        $tokenData = $this->getTokenData();
-
-        return
-            isset($tokenData) &&
-            $tokenData['expires'] > time();
+        return $this->hasCookieToken()
+               && $this->tokenDataExists();
     }
 
     public function getTokenUserData()
@@ -69,45 +80,42 @@ class TwitterExtended
         return isset($_COOKIE[self::TOKEN_KEY]);
     }
 
+    private function tokenDataExists()
+    {
+         return $this->getRedis()->exists($this->prefix . $_COOKIE[self::TOKEN_KEY]);
+    }
+
     private function getTokenData()
     {
         if (!$this->hasCookieToken()) {
             return [];
         }
-        return $this->getTokenDataList()[$_COOKIE[self::TOKEN_KEY]];
-    }
-
-    private function getTokenDataList()
-    {
-        //TODO save tokens ones read
-        //TODO use redis
-        if (!file_exists('/var/www/data')) {
-            mkdir('data', 0777, true);
-        }
-        if (!file_exists('/var/www/data/tokens.json')) {
+        $tokenData = $this->getRedis()->get($this->prefix . $_COOKIE[self::TOKEN_KEY]);
+        if (!$tokenData) {
             return [];
         }
-        return json_decode(file_get_contents('/var/www/data/tokens.json'), true);
+        return json_decode($tokenData, true);
+    }
+
+    private function addToken($id, $handle)
+    {
+        $token = $this->createToken($id);
+        $this->getRedis()->setEx(
+            $this->prefix . $token,
+            $this->tokenLifetime,
+            json_encode(
+                array(
+                    'id' => $id,
+                    'handle' => $handle
+                )
+            )
+        );
+        $this->setTokenCookie($token);
     }
 
     private function createToken($userId)
     {
         return md5(time() . $userId . rand(1000, 9999));
-    }
-
-    private function addToken($id, $handle)
-    {
-        //TODO use redis to let the token expire by their own
-        $tokenDataList = $this->getTokenDataList();
-        $token = $this->createToken($userData['id']);
-        $tokenDataList[$token] = array(
-            'id' => $id,
-            'handle' => $handle,
-            'token' => $token,
-            'expires' => time() + $this->tokenLifetime
-        );
-        file_put_contents('/var/www/data/tokens.json', json_encode($tokenDataList));
-        $this->setTokenCookie($token);
     }
 
     private function setTokenCookie($token)
@@ -119,5 +127,18 @@ class TwitterExtended
             "/"
         );
         $_COOKIE[self::TOKEN_KEY] = $token;
+    }
+
+    private function getRedis()
+    {
+        if ($this->redis !== null) {
+            return $this->redis;
+        }
+        $config = Config::get($this->iniFile, array('redisHost','redisPrefix'));
+        $port = $config['redisPort'] ?? 6379;
+        $this->prefix =  $config['redisPrefix'];
+        $this->redis = new Redis();
+        $this->redis->connect($config['redisHost'], $port);
+        return $this->redis;
     }
 }
