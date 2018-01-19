@@ -12,7 +12,6 @@ docker build -t login-api . ;\
 docker run -td -p 80:8080 --name login-api -v $(pwd):/var/www login-api ;\
 echo -e "\n\n   open this url: http://"$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' login-api)":8080/status\n\n" ;\
 docker exec -t login-api php -S 0.0.0.0:8080 index.php
-
 ```
 
 ## what's next?

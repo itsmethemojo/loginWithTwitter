@@ -12,7 +12,6 @@ you can run the codesniffer by yourself by using this command
 it will connect into the running login-api container and starts **phpcbf** and **phpcs**
 ```
 hooks/codesniffer.sh
-
 ```
 
 
