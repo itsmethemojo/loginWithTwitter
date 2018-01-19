@@ -38,8 +38,8 @@ class TwitterExtended
     {
         $this->iniFile = $iniFile;
         $config = Config::get($this->iniFile, array('LIFETIME'));
-        if(isset($config['DUMMY_MODE'])){
-          $this->dummyMode = boolval($config['DUMMY_MODE']);
+        if (isset($config['DUMMY_MODE'])) {
+            $this->dummyMode = boolval($config['DUMMY_MODE']);
         }
         $this->tokenLifetime = intval($config['LIFETIME']);
     }
@@ -55,7 +55,7 @@ class TwitterExtended
         // if user is not whitelisted this array is empty
         if (!key_exists('id', $userData)) {
             throw new AuthentificationException(
-              "this twitter account is not in the list of allowed accounts"
+                "this twitter account is not in the list of allowed accounts"
             );
         }
         $this->addToken($userData['id'], $userData['name']);
@@ -64,15 +64,15 @@ class TwitterExtended
             return true;
         } else {
             throw new AuthentificationException(
-              "final check after token cookie creation failed. "
-              . "if this happens there is something wrong with the application configuration"
+                "final check after token cookie creation failed. "
+                . "if this happens there is something wrong with the application configuration"
             );
         }
     }
 
     public function isLoggedIn()
     {
-        if($this->dummyMode){
+        if ($this->dummyMode) {
             return true;
         }
         return $this->hasCookieToken()
@@ -81,7 +81,7 @@ class TwitterExtended
 
     public function getTokenUserData()
     {
-        if($this->dummyMode){
+        if ($this->dummyMode) {
             return [
                 "id" => '11111111',
                 "handle" => 'dummyModeMan'

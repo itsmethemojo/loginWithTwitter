@@ -9,11 +9,10 @@ use Itsmethemojo\File\Config;
 
 $iniFilename = 'login';
 
-try{
-  $debug = boolval(Config::get($iniFilename, array('DEBUG_MODE'))['DEBUG_MODE']);
-}
-catch(Exception $e){
-  $debug = false;
+try {
+    $debug = boolval(Config::get($iniFilename, array('DEBUG_MODE'))['DEBUG_MODE']);
+} catch (Exception $e) {
+    $debug = false;
 }
 
 $config = [
