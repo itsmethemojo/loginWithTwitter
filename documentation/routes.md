@@ -1,8 +1,10 @@
+[back to README](../README.md)
+
 ## /status
 
 checks if your cookie token is still valid
 
-there is **lifetime** you can configure in **config/twitter.ini**
+there is **lifetime** you can configure in **config/login.ini**
 
 ### response types
 
@@ -20,6 +22,6 @@ url parameter will overrule the header
 
 ### response types
 
-* **500** internal error
-* **TODO** **400** parameter missing
 * redirect if successfull
+* **400** parameter missing
+* **500** internal error
