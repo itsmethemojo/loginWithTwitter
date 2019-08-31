@@ -14,6 +14,5 @@ docker run --name local-redis -d redis
 #startup login api container
 docker stop login-api || true
 docker rm login-api || true
-docker run -td --name login-api -v $(pwd):/var/www buildpack-task-local-server ;\
-echo -e "\n\n   open this url: http://"$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' login-api)":8080/status\n\n" ;\
-docker exec -t login-api php -S 0.0.0.0:8080 index.php
+docker run -td --name login-api -v $(pwd):/var/www buildpack-task-local-server
+echo -e "\n\n   open this url: http://"$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' login-api)"/status\n\n"

@@ -16,7 +16,7 @@ Twitter will verifiy your users and you can focus on the interesting things.
 within the console output the address of the local login api will be printed e.g.
 
 ```
-open this url: http://172.17.0.8:8080/status
+open this url: http://172.17.0.8/status
 ```
 
 ## what's next?

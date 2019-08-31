@@ -7,7 +7,15 @@ cp config/login.ini.example config/login.ini
 ```
 
 ## get Twitter Application Keys
-go to https://apps.twitter.com/ and hit **Create New App** and add the two keys to the new config file
+Go to https://apps.twitter.com/ and hit **Create New App** and add the two keys to the new config file.
+
+Also define a valid callback url.
+
+You might add this line in your /etc/hosts
+`
+172.17.0.8 login.api
+`
+then you only have to add **http://login.api/login** in your twitter app as callback url. If the IP of the container changes just edit your hosts file.
 
 ## add the Redis configuration
 to get the host ip from the local redis simply run this
