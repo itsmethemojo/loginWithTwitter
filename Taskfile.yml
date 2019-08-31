@@ -214,6 +214,10 @@ tasks:
     cmds:
       - cmd: name="clear" task run
         silent: true
+  lint:
+    cmds:
+      - cmd: name="lint" task run
+        silent: true
   local-server:
     cmds:
       - cmd: name="local-server" task run
