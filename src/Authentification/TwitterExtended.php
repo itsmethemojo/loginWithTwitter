@@ -37,7 +37,7 @@ class TwitterExtended
     {
         $this->config = $config;
         if (empty($this->config['LIFETIME'])) {
-            throw new ConfigException("LIFETIME is missing in config");
+            throw new ConfigException("LIFETIME");
         }
         $this->dummyMode = filter_var($this->config['DUMMY_MODE'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         $this->tokenLifetime = intval($this->config['LIFETIME']);
@@ -157,7 +157,7 @@ class TwitterExtended
         }
         foreach (['REDIS_HOST','REDIS_PREFIX'] as $configKey) {
             if (empty($this->config[$configKey])) {
-                throw new ConfigException($configKey . " is missing in config");
+                throw new ConfigException($configKey);
             }
         }
         $port = $this->config['REDIS_PORT'] ?? 6379;

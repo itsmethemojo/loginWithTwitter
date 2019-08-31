@@ -143,7 +143,7 @@ class Twitter
     {
         foreach (['CONSUMER_KEY','CONSUMER_SECRET','WHITELIST'] as $configKey) {
             if (empty($this->config[$configKey])) {
-                throw new ConfigException($configKey . " is missing in config");
+                throw new ConfigException($configKey);
             }
         }
 
