@@ -7,18 +7,13 @@ use Itsmethemojo\Authentification\Redirect;
 use Itsmethemojo\Authentification\ParameterException;
 use Itsmethemojo\File\Config;
 
-$iniFilename = 'login';
-
-try {
-    $debug = boolval(Config::get($iniFilename, array('DEBUG_MODE'))['DEBUG_MODE']);
-} catch (Exception $e) {
-    $debug = false;
-}
+$dotenv = Dotenv\Dotenv::create(__DIR__ . "/..");
+$dotenv->load();
 
 $config = [
     'settings' => [
-        'displayErrorDetails' => $debug,
-        'iniFileName' => $iniFilename
+        'displayErrorDetails' => filter_var($_ENV['DEBUG_MODE'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        'loginApiConfig' => $_ENV
     ],
 ];
 
@@ -35,7 +30,7 @@ $container['cache'] = function () {
 $app->get(
     '/status',
     function ($request, $response, $args) {
-        $twitter = new TwitterExtended($this->get('settings')['iniFileName']);
+        $twitter = new TwitterExtended($this->get('settings')['loginApiConfig']);
         if (!$twitter->isLoggedIn()) {
             $output = $response->withStatus(401)->withJson(array("status" => "not authorized"));
             return $this->cache->allowCache($output, 'public', 0);
@@ -55,7 +50,7 @@ $app->get(
     function ($request, $response, $args) {
         try {
             $redirectTarget = Redirect::getUrl($request->getParams(), $request->getServerParams());
-            $twitter = new TwitterExtended($this->get('settings')['iniFileName']);
+            $twitter = new TwitterExtended($this->get('settings')['loginApiConfig']);
             $twitter->doLogin();
             return $response->withRedirect($redirectTarget);
         } catch (ParameterException $ex) {

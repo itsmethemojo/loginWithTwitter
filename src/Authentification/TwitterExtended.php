@@ -2,7 +2,6 @@
 
 namespace Itsmethemojo\Authentification;
 
-use Itsmethemojo\File\Config;
 use Redis;
 
 class TwitterExtended
@@ -25,23 +24,23 @@ class TwitterExtended
     private $prefix = null;
 
     /**
-     * @var String name of ini file in config folder
+     * @var Array config values
     **/
-    private $iniFile = null;
+    private $config = [];
 
     /**
      * @var Boolean dummy mode on / off
     **/
     private $dummyMode = false;
 
-    public function __construct($iniFile = 'login')
+    public function __construct($config = [])
     {
-        $this->iniFile = $iniFile;
-        $config = Config::get($this->iniFile, array('LIFETIME'));
-        if (isset($config['DUMMY_MODE'])) {
-            $this->dummyMode = boolval($config['DUMMY_MODE']);
+        $this->config = $config;
+        if (empty($this->config['LIFETIME'])) {
+            throw new ConfigException("LIFETIME is missing in config");
         }
-        $this->tokenLifetime = intval($config['LIFETIME']);
+        $this->dummyMode = filter_var($this->config['DUMMY_MODE'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $this->tokenLifetime = intval($this->config['LIFETIME']);
     }
 
     public function doLogin()
@@ -49,7 +48,7 @@ class TwitterExtended
         if ($this->isLoggedIn()) {
             return true;
         }
-        $twitter = new Twitter($this->iniFile);
+        $twitter = new Twitter($this->config);
         $userData = $twitter->getLoginUser();
 
         // if user is not whitelisted this array is empty
@@ -156,11 +155,15 @@ class TwitterExtended
         if ($this->redis !== null) {
             return $this->redis;
         }
-        $config = Config::get($this->iniFile, array('REDIS_HOST','REDIS_PREFIX'));
-        $port = $config['REDIS_PORT'] ?? 6379;
-        $this->prefix =  $config['REDIS_PREFIX'];
+        foreach (['REDIS_HOST','REDIS_PREFIX'] as $configKey) {
+            if (empty($this->config[$configKey])) {
+                throw new ConfigException($configKey . " is missing in config");
+            }
+        }
+        $port = $this->config['REDIS_PORT'] ?? 6379;
+        $this->prefix =  $this->config['REDIS_PREFIX'];
         $this->redis = new Redis();
-        $this->redis->connect($config['REDIS_HOST'], $port);
+        $this->redis->connect($this->config['REDIS_HOST'], $port);
         return $this->redis;
     }
 }

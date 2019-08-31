@@ -3,22 +3,32 @@
 namespace Itsmethemojo\Authentification;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
-use Itsmethemojo\File\Config;
 
 class Twitter
 {
+    /**
+     * @var String consumerKey from twitter app
+    **/
     private $consumerKey    = null;
+
+    /**
+     * @var String consumerSecret from twitter app
+    **/
     private $consumerSecret = null;
+
+    /**
+     * @var String[] list of allowed twitter ids
+    **/
     private $whitelist = [];
 
     /**
-     * @var String name of ini file in config folder
+     * @var Array config values
     **/
-    private $iniFile = null;
+    private $config = [];
 
-    public function __construct($iniFile = 'login')
+    public function __construct($config = [])
     {
-        $this->iniFile = $iniFile;
+        $this->config = $config;
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
@@ -131,12 +141,14 @@ class Twitter
 
     private function readConfig()
     {
-        $config = Config::get(
-            $this->iniFile,
-            array('CONSUMER_KEY', 'CONSUMER_SECRET', 'WHITELIST')
-        );
-        $this->consumerKey = $config['CONSUMER_KEY'];
-        $this->consumerSecret = $config['CONSUMER_SECRET'];
-        $this->whitelist = $config['WHITELIST'];
+        foreach (['CONSUMER_KEY','CONSUMER_SECRET','WHITELIST'] as $configKey) {
+            if (empty($this->config[$configKey])) {
+                throw new ConfigException($configKey . " is missing in config");
+            }
+        }
+
+        $this->consumerKey = $this->config['CONSUMER_KEY'];
+        $this->consumerSecret = $this->config['CONSUMER_SECRET'];
+        $this->whitelist = explode(",", $this->config['WHITELIST']);
     }
 }
