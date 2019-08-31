@@ -1,0 +1,220 @@
+version: '2'
+
+expansions: 5
+
+vars:
+  BUILDPACK_REPOSITORY: 'https://github.com/itsmethemojo/buildpack.git'
+  BUILDPACK_FOLDER: buildpack
+  BUILDPACK_TMP_FOLDER: "{{.BUILDPACK_FOLDER}}/tmp"
+  CONFIG_FOLDER: "{{.BUILDPACK_FOLDER}}/config"
+  BASH_SCRIPT_TEMPLATE: "{{.BUILDPACK_TMP_FOLDER}}/bash/templates/run-task.sh"
+  TASK_TARGET_TEMPLATE: "{{.BUILDPACK_TMP_FOLDER}}/taskfiles/templates/target-to-run-task.yml"
+  SCRIPTS_FOLDER: "{{.BUILDPACK_FOLDER}}/scripts"
+  BUILDPACK_BRANCH:
+    sh: >-
+      BUILDPACK_BRANCH=master;
+      if [ "$BRANCH" != "" ]; then
+      BUILDPACK_BRANCH=$BRANCH;
+      fi;
+      if [ "$DOWNLOAD_MODE" == "local_copy" ]; then
+      BUILDPACK_BRANCH="- (local copy)";
+      fi;
+      echo $BUILDPACK_BRANCH;
+  DOWNLOAD_TASK:
+    sh: >-
+      if [ "$DOWNLOAD_MODE" == "local_copy" ]; then
+      echo _copy_from_local;
+      else
+      echo _download_from_git;
+      fi
+  ABSOLUTE_PROJECT_ROOT:
+    sh: "pwd"
+  TASK_SCRIPT_PATH: "{{.SCRIPTS_FOLDER}}/$name.sh"
+  TASK_CONFIG_FILE: "{{.CONFIG_FOLDER}}/tasks.env"
+  TASK_DEFAULT_CONTAINER: "buildpack-deps"
+  TASK_DIR_IN_CONTAINER: "/container-$name"
+  TASK_CONTAINER_MOUNT_PARAMETERS: "-v $(pwd):{{.TASK_DIR_IN_CONTAINER}}"
+  TASK_CONTAINER_NAME:
+    sh: >-
+      CONFIG_FILE=buildpack/config/tasks.env
+      RETURN_CONTAINER_NAME=buildpack-deps;
+      if [ "$(grep -e "^${name}_container=" $CONFIG_FILE 2>/dev/null | grep -o -e '[^=]*$')" != "" ]; then
+      RETURN_CONTAINER_NAME="$(grep -e "^${name}_container=" $CONFIG_FILE 2>/dev/null | grep -o -e '[^=]*$')";
+      fi;
+      if [ "$(grep -e "^${name}_dockerfile=" $CONFIG_FILE 2>/dev/null | grep -o -e '[^=]*$')" != "" ]; then
+      RETURN_CONTAINER_NAME="buildpack-task-${name}";
+      fi;
+      echo $RETURN_CONTAINER_NAME;
+  TASK_DOCKERFILE_PATH:
+    sh: >-
+      echo "$(grep -e "^${name}_dockerfile=" buildpack/config/tasks.env 2>/dev/null | grep -o -e '[^=]*$')";
+
+tasks:
+
+  add:
+    deps: [ _check-install-needed ]
+    cmds:
+      - task: _create-task-script
+      - task: _update-taskfile
+
+  buildpack-version:
+    deps: [ _check-install-needed ]
+    cmds:
+      - task: _print-version
+
+  install-buildpack:
+    cmds:
+      - task: _download-buildpack
+      - task: _create-config-files
+      - task: _update-gitignore
+      - task: _update-taskfile
+
+  run:
+    deps: [ _check-install-needed ]
+    cmds:
+      - task: _print-version
+      - task: _build_task_container
+      - task: _run_task
+
+  # private targets
+
+  _add-targets-for-available-tasks-to-taskfile:
+    cmds:
+      - cmd: >-
+          for SCRIPT_FILE in $(ls -1 {{.SCRIPTS_FOLDER}} 2>/dev/null | sed -e 's/\..*$//'); do
+          cat {{.TASK_TARGET_TEMPLATE}} | sed "s/__TASKNAME__/$SCRIPT_FILE/g" >> Taskfile.yml;
+          done
+        silent: true
+
+  _build_task_container:
+    cmds:
+      - cmd: >-
+          if [ "{{.TASK_DOCKERFILE_PATH}}" != "" ]; then
+          docker build -t {{.TASK_CONTAINER_NAME}} -f "{{.TASK_DOCKERFILE_PATH}}" $(dirname "{{.TASK_DOCKERFILE_PATH}}");
+          fi;
+        silent: true
+
+  _check-install-needed:
+    cmds:
+      - cmd: >-
+          if [ ! -f "{{.BASH_SCRIPT_TEMPLATE}}" ]; then
+          echo 'Important files missing. Buildpack seems not be installed. Run task install-buildpack to fix that.';
+          exit 1;
+          fi
+        silent: true
+
+  _copy_from_local:
+    cmds:
+      - cmd: >-
+          cp -R {{.BUILDPACK_FOLDER}}/../../../taskfiles {{.BUILDPACK_TMP_FOLDER}};
+          cp -R {{.BUILDPACK_FOLDER}}/../../../bash {{.BUILDPACK_TMP_FOLDER}};
+          cp {{.BUILDPACK_FOLDER}}/../../../Taskfile.yml {{.BUILDPACK_TMP_FOLDER}}/Taskfile.yml;
+          echo '- (local copy)' > {{.BUILDPACK_TMP_FOLDER}}/BRANCH
+        silent: true
+
+  _copy-taskfile-from-download:
+    cmds:
+      - cmd: "cat {{.BUILDPACK_TMP_FOLDER}}/Taskfile.yml > Taskfile.yml"
+        silent: true
+
+  _create-config-files:
+    cmds:
+      - cmd: >-
+          mkdir -p {{.CONFIG_FOLDER}}/docker;
+          touch {{.CONFIG_FOLDER}}/tasks.env
+        silent: true
+
+  _create-task-script:
+    deps: [ _has-name-parameter ]
+    cmds:
+      - cmd: >-
+          mkdir -p {{.SCRIPTS_FOLDER}};
+          touch {{.SCRIPTS_FOLDER}}/{{.name}}.sh;
+          chmod +x {{.SCRIPTS_FOLDER}}/{{.name}}.sh;
+          cat {{.BASH_SCRIPT_TEMPLATE}} >> {{.SCRIPTS_FOLDER}}/{{.name}}.sh
+        silent: true
+
+  _download-buildpack:
+    deps: [ _empty-download-folder ]
+    cmds:
+      - task: "{{.DOWNLOAD_TASK}}"
+      - cmd: "echo '{{.BUILDPACK_BRANCH}}' > {{.BUILDPACK_TMP_FOLDER}}/BRANCH"
+        silent: true
+
+  _download_from_git:
+    cmds:
+      - cmd: >-
+          docker run -v {{.ABSOLUTE_PROJECT_ROOT}}/{{.BUILDPACK_TMP_FOLDER}}:/downloads buildpack-deps
+          bash -c "
+          git clone -b {{.BUILDPACK_BRANCH}} --depth 1 {{.BUILDPACK_REPOSITORY}} /downloads &> /dev/null &&
+          git ls-remote /downloads | grep 'refs/tags' | sort -r | grep -o '[^\\/]*$' | head -1 > /downloads/VERSION &&
+          rm -r /downloads/.git &&
+          chmod -R 777 /downloads
+          "
+        silent: true
+
+  _empty-download-folder:
+    cmds:
+      - cmd: >-
+          rm -rf {{.BUILDPACK_TMP_FOLDER}};
+          mkdir -p {{.BUILDPACK_TMP_FOLDER}}
+        silent: true
+
+  _has-name-parameter:
+    cmds:
+      - cmd: >-
+          if [ "$name" == "" ]; then
+          echo 'missing Parameter name! Usage: name="my-task" task add';
+          exit 1;
+          fi
+        silent: true
+
+  _print-version:
+    cmds:
+      - cmd: >-
+          VERSION="$(cat {{.BUILDPACK_TMP_FOLDER}}/VERSION 2>/dev/null)";
+          if [ "$VERSION" == "" ]; then
+          VERSION=-;
+          fi;
+          echo version: $VERSION;
+          echo branch: $(cat {{.BUILDPACK_TMP_FOLDER}}/BRANCH);
+        silent: true
+
+  _run_task:
+    cmds:
+      - cmd: >-
+          if [ -f "/.dockerenv" ]; then
+          bash {{.TASK_DIR_IN_CONTAINER}}/{{.TASK_SCRIPT_PATH}};
+          else
+          docker run {{.TASK_CONTAINER_MOUNT_PARAMETERS}} -w {{.TASK_DIR_IN_CONTAINER}} {{.TASK_CONTAINER_NAME}} bash {{.TASK_SCRIPT_PATH}};
+          fi;
+        silent: true
+
+  _update-gitignore:
+    cmds:
+      - cmd: >-
+          if [ ! -f .gitignore ]; then
+          echo "/{{.BUILDPACK_TMP_FOLDER}}"/ > .gitignore;
+          fi;
+          if [ "$(grep "/{{.BUILDPACK_TMP_FOLDER}}/" .gitignore | wc -l)" = "0" ]; then
+          echo "/{{.BUILDPACK_TMP_FOLDER}}/" >> .gitignore;
+          fi
+        silent: true
+
+  _update-taskfile:
+    cmds:
+      - task: _copy-taskfile-from-download
+      - task: _add-targets-for-available-tasks-to-taskfile
+      - task: _print-version
+  build:
+    cmds:
+      - cmd: name="build" task run
+        silent: true
+  clear:
+    cmds:
+      - cmd: name="clear" task run
+        silent: true
+  local-server:
+    cmds:
+      - cmd: name="local-server" task run
+        silent: true

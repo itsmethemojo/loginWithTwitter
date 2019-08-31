@@ -3,15 +3,20 @@
 This REST API provides authentification via twitter for your application. The idea is to keep account management away from you.
 Twitter will verifiy your users and you can focus on the interesting things.
 
-## howto to run it local in 2 minutes
+## required software
+
+* docker
+* [go-task](https://taskfile.org/#/installation?id=install-script)
+
+## howto to run it locally with a single command
 
 ```
-docker run --rm --interactive --tty --volume $PWD:/app composer install ;\
-docker run --name local-redis -d redis ;\
-docker build -t login-api . ;\
-docker run -td -p 80:8080 --name login-api -v $(pwd):/var/www login-api ;\
-echo -e "\n\n   open this url: http://"$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' login-api)":8080/status\n\n" ;\
-docker exec -t login-api php -S 0.0.0.0:8080 index.php
+./local-server.sh
+```
+within the console output the address of the local login api will be printed e.g.
+
+```
+open this url: http://172.17.0.8:8080/status
 ```
 
 ## what's next?
