@@ -1,9 +1,9 @@
 [back to README](../README.md)
 
-## create the config file
+## create the .env file
 you can copy the template
 ```
-cp config/login.ini.example config/login.ini
+cp .env.example .env
 ```
 
 ## get Twitter Application Keys
