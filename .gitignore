@@ -1,3 +1,4 @@
 /vendor/
-/buildpack/tmp/
 /.env
+! /.dckrz/
+/.dckrz/tmp/
