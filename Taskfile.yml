@@ -1,4 +1,4 @@
-#DCKRZ_VERSION: 0.9
+#DCKRZ_VERSION: 0.10
 
 version: '2'
 
@@ -16,7 +16,7 @@ vars:
     sh: >-
       DCKRZ_VERSION=$VERSION;
       if [ "$DCKRZ_VERSION" == "" ]; then
-        DCKRZ_VERSION="$(grep -e "^#DCKRZ_VERSION:" Taskfile.yml 2>/dev/null | grep -o -e '[^:]*$')";
+        DCKRZ_VERSION="$(grep -e "^#DCKRZ_VERSION:" Taskfile.yml 2>/dev/null | cut -d':' -f2)";
       fi;
       if [ "$DCKRZ_VERSION" == "" ] && [ ! -f "../tests.bats" ]; then
         DCKRZ_VERSION=$(docker run buildpack-deps:curl bash -c 'curl -s https://api.github.com/repos/itsmethemojo/dot-dockerize/tags | grep "\"name\":" | head -1 | cut -d":" -f2 | cut -d"\"" -f2');
@@ -48,7 +48,7 @@ vars:
 tasks:
 
   dz:add:
-    desc: "adds a new task that can be later used with task foo_bar\n                NAME=foo_bar task dz:add\n"
+    desc: "adds a new task that can be later used with task foo_bar\n                TARGET_NAME=foo_bar task dz:add\n"
     deps: [ _init:check_if_init_needed ]
     cmds:
       - task: _add:create_task_script
@@ -95,14 +95,14 @@ tasks:
   _add:create_task_script:
     cmds:
       - cmd: >-
-          if [ "$NAME" == "" ]; then
-            echo 'missing Parameter name! Usage: NAME="foo_bar" task dz:add';
+          if [ "$TARGET_NAME" == "" ]; then
+            echo 'missing Parameter name! Usage: TARGET_NAME="foo_bar" task dz:add';
             exit 1;
           fi;
           mkdir -p {{.DIRECTORY_SCRIPTS}};
-          touch {{.DIRECTORY_SCRIPTS}}/$NAME.sh;
-          chmod +x {{.DIRECTORY_SCRIPTS}}/$NAME.sh;
-          cat {{.FILE_BASH_SCRIPT_TEMPLATE}} > {{.DIRECTORY_SCRIPTS}}/$NAME.sh
+          touch {{.DIRECTORY_SCRIPTS}}/$TARGET_NAME.sh;
+          chmod +x {{.DIRECTORY_SCRIPTS}}/$TARGET_NAME.sh;
+          cat {{.FILE_BASH_SCRIPT_TEMPLATE}} > {{.DIRECTORY_SCRIPTS}}/$TARGET_NAME.sh
         silent: true
 
   _init:check_if_init_needed:
@@ -167,7 +167,7 @@ tasks:
       - cmd: >-
           ls {{.DIRECTORY_DCKRZ_TMP}}/;
           if [ "{{.DOCKERFILE_PATH}}" != "" ]; then
-            docker build -t {{.CONTAINER_NAME}} -f "{{.DOCKERFILE_PATH}}" $(dirname "{{.DOCKERFILE_PATH}}");
+            docker build -t {{.CONTAINER_NAME}} -f {{.DOCKERFILE_PATH}} $(dirname "{{.DOCKERFILE_PATH}}");
           fi;
           if [ -f "/.dockerenv" ]; then
             bash {{.PATH_IN_CONTAINER}}/{{.FILE_SCRIPT}};
@@ -183,16 +183,16 @@ tasks:
       CONTAINER_NAME:
         sh: >-
           RETURN_CONTAINER_NAME={{.CONTAINER_DEFAULT}};
-          if [ "$(grep -e "^{{.TASK_NAME}}_container=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | grep -o -e '[^=]*$')" != "" ]; then
-            RETURN_CONTAINER_NAME="$(grep -e "^{{.TASK_NAME}}_container=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | grep -o -e '[^=]*$')";
+          if [ "$(grep -e "^{{.TASK_NAME}}_container=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | cut -d'=' -f2)" != "" ]; then
+            RETURN_CONTAINER_NAME="$(grep -e "^{{.TASK_NAME}}_container=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | cut -d'=' -f2)";
           fi;
-          if [ "$(grep -e "^{{.TASK_NAME}}_dockerfile=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | grep -o -e '[^=]*$')" != "" ]; then
+          if [ "$(grep -e "^{{.TASK_NAME}}_dockerfile=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | cut -d'=' -f2)" != "" ]; then
             RETURN_CONTAINER_NAME="dckrz-{{.PROJECT_FOLDER_NAME}}-{{.TASK_NAME}}";
           fi;
           echo $RETURN_CONTAINER_NAME;
       DOCKERFILE_PATH:
         sh: >-
-          echo "$(grep -e "^{{.TASK_NAME}}_dockerfile=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | grep -o -e '[^=]*$')";
+          echo "$(grep -e "^{{.TASK_NAME}}_dockerfile=" {{.FILE_DCKRZ_CONFIG}} 2>/dev/null | cut -d'=' -f2)";
 
   _script:start_watch:
     cmds:
